@@ -17,12 +17,15 @@ import {
   MIN_TYPING_S,
   MAX_TYPING_S,
   MIN_NATURAL_PAUSE_S,
-  MAX_NATURAL_PAUSE_S
+  MAX_NATURAL_PAUSE_S,
+  SENDER_ROOM
 } from './constants.js';
+
+import router from './routes/index.js';
 
 const app = express();
 const server = createServer(app);
-const router = express.Router();
+
 const io = new Server(server, {
   connectionStateRecovery: {
     maxDisconnectionDuration: 5000,
@@ -31,20 +34,32 @@ const io = new Server(server, {
 
 let botResponses = null;
 
-app.use(router);
+app.use('/api', router);
 app.use(cors({ origin: '*' }));
 app.use(express.static(path.dirname + '/public'));
 
 io.on('connection', (socket) => {
-  socket.on(USER_MESSAGE_EVENT, (message) => {
+  console.log('Client connected')
+
+  socket.on(SENDER_ROOM, (sender) => {
+    socket.join(sender)
+  })
+  
+  socket.on(USER_MESSAGE_EVENT, ({ message, sender }) => {
+    // send the message to the sender room
+    socket.broadcast.to(sender).emit(
+      USER_MESSAGE_EVENT,
+      message,
+    )
+
     setTimeout(() => {
       // Don't emit a typing event if we've set typing seconds to 0
-      if(MAX_TYPING_S) { socket.emit(BOT_TYPING_EVENT); }
+      if (MAX_TYPING_S) { io.in(sender).emit(BOT_TYPING_EVENT); }
 
       setTimeout(() => {
-        socket.emit(
+        io.in(sender).emit(
           BOT_MESSAGE_EVENT,
-          getBotResponse(message, botResponses)
+          getBotResponse(message, botResponses),
         );
       }, getRandomDelay(MIN_TYPING_S, MAX_TYPING_S));
 
