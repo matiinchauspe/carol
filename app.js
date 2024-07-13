@@ -39,7 +39,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.static(path.dirname + '/public'));
 
 io.on('connection', (socket) => {
-  console.log('Client connected')
+  console.log(`Client ${socket.id} connected`)
 
   socket.on(SENDER_ROOM, (sender) => {
     socket.join(sender)
