@@ -18,7 +18,6 @@ import {
   MAX_TYPING_S,
   MIN_NATURAL_PAUSE_S,
   MAX_NATURAL_PAUSE_S,
-  SENDER_ROOM
 } from './constants.js';
 
 import router from './routes/index.js';
@@ -28,7 +27,7 @@ const server = createServer(app);
 
 const io = new Server(server, {
   connectionStateRecovery: {
-    maxDisconnectionDuration: 5000,
+    maxDisconnectionDuration: {}
   }
 })
 
@@ -39,12 +38,29 @@ app.use(cors({ origin: '*' }));
 app.use(express.static(path.dirname + '/public'));
 
 io.on('connection', (socket) => {
-  console.log(`Client ${socket.id} connected`)
+  const loggedUser = socket.handshake.auth.userId;
 
-  socket.on(SENDER_ROOM, (sender) => {
-    socket.join(sender)
+  console.log(`${loggedUser} connected`)
+  
+  socket.broadcast.emit('user-connected', { userId: loggedUser });
+  
+  // join to the sender room
+  socket.join(loggedUser);
+
+  // disconnect
+  socket.on('disconnect', () => {
+    console.log(`${loggedUser} disconnected`)
+    socket.broadcast.emit('user-disconnected', { userId: loggedUser });
   })
   
+  // Private messages between users
+  socket.on('user-private-message', ({ message, sender, receiver }) => {
+    socket.join(sender);
+    
+    io.in(receiver).emit('user-private-message', { message, sender, receiver });
+  })
+
+
   socket.on(USER_MESSAGE_EVENT, ({ message, sender }) => {
     // send the message to the sender room
     socket.broadcast.to(sender).emit(
@@ -54,10 +70,10 @@ io.on('connection', (socket) => {
 
     setTimeout(() => {
       // Don't emit a typing event if we've set typing seconds to 0
-      if (MAX_TYPING_S) { io.in(sender).emit(BOT_TYPING_EVENT); }
+      if (MAX_TYPING_S) { io.in(loggedUser).emit(BOT_TYPING_EVENT); }
 
       setTimeout(() => {
-        io.in(sender).emit(
+        io.in(loggedUser).emit(
           BOT_MESSAGE_EVENT,
           getBotResponse(message, botResponses),
         );

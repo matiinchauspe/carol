@@ -2,10 +2,12 @@ const PORT = process.env.PORT || 4001;
 const RESPONSES_FILE_PATH = './response_dataset.csv';
 const RESPONSES_INPUT_KEY = 'input';
 const RESPONSES_OUTPUT_KEY = 'output';
-const USER_MESSAGE_EVENT = 'user-message';
+// events
+const USER_MESSAGE_EVENT = 'user-bot-message';
 const BOT_MESSAGE_EVENT = 'bot-message';
 const BOT_TYPING_EVENT = 'bot-typing';
-const SENDER_ROOM = 'sender-room';
+const USER_CONNECTED_EVENT = 'user-connected';
+const USER_DISCONNECTED_EVENT = 'user-disconnected';
 
 // Bot Natural Defaults
 const DEFAULT_RESPONSE = 'Sorry, I didn\'t quite understand that.';
@@ -23,7 +25,8 @@ export {
   USER_MESSAGE_EVENT,
   BOT_MESSAGE_EVENT,
   BOT_TYPING_EVENT,
-  SENDER_ROOM,
+  USER_CONNECTED_EVENT,
+  USER_DISCONNECTED_EVENT,
   DEFAULT_RESPONSE,
   RESPONSE_MATCH_THRESHOLD,
   MIN_TYPING_S,
